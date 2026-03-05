@@ -1,0 +1,290 @@
+<!--#errorCatcher Echo-->
+<!DOCTYPE html>
+<head>
+	<title>Weather</title>
+	<!--<link rel="stylesheet" href="/home/mdjames/tabletWxStyles.css">-->
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!--<meta http-equiv="refresh" content="60">-->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+	<style>
+		body 	{background-color: rgb(220, 224, 224); 
+				font-family: "Open Sans"
+				}
+				
+		#loc_name {height:1em; padding:.25em}
+		#modal {display: none; /* Hidden by default */
+		  position: fixed; /* Stay in place */
+		  z-index: 1; /* Sit on top */
+		  left: 0;
+		  top: 0;
+		  width: 100vw; /* Full width */
+		  height: 100vh; /* Full height */
+		  overflow: auto; /* Enable scroll if needed */
+		  background-color: rgb(0,0,0); /* Fallback color */
+		  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+		}
+		#modal-content{
+		background-color: #fefefe;
+		  margin: 15% auto; /* 15% from the top and centered */
+		  padding: 20px;
+		  border: 1px solid #888;
+		  width: 80vw; /* Could be more or less, depending on screen size */
+		}
+		
+		#alert{display:inline}
+		
+		td.fcst {text-align:center}
+	</style>				
+</head>
+
+<body onload="onloadRoutines()">
+
+<div id="modal">
+	<div id="modal-content"></div>
+</div>
+
+<div>
+	<input id="searchBox"></input><button onClick="localize()">Search</button>
+</div>
+
+<div id="loc_name"></div>
+
+<div id="almanac">
+			<div id="nwsHiLo">
+			<font color="red">Hi</font> <span id="nwsHi"></span>&nbsp;<font color="blue">Lo</font> <span id="nwsLo"></span>
+			</div>
+			<div id="alert" onClick="showAlert()"><img src="#"></div>
+			<div id="nwsFc" onClick="showForecast(0)"></div>
+			<!--<div id="date">$current.dateTime.format('%b %d')</div>
+			<div id="moonPhase"></div>
+			<div id="sunsetTime"><img src="images/sunrise.png" id="sunIcon">$almanac.sunrise.format('%H:%M') &nbsp;<img src="images/sunset.png" id="sunIcon">$almanac.sunset.format('%H:%M')</div>-->
+</div>
+
+<div id="forecast">
+		<div id="radarContainer"><img class="radar" src="images/radar.png" height="1em" width="1em" onClick="showRadar()"></div>
+
+		<!--<div id="windContainer">
+			<canvas id="wind" width="300" height="300"></canvas>
+		<div>
+		-->
+		<div id="other">
+			<marquee></marquee>
+			<!--<img src="daybarometer.png" width="100%"/>-->
+			<table id="forecast">
+				<tr>
+					<td id="day1" class="fcst"></td>
+					<td id="day2" class="fcst"></td>
+					<td id="day3" class="fcst"></td>
+				</tr>
+			</table>
+		</div>
+</div>
+</body>
+
+<script>
+	//var resultsDiv = document.getElementById('nwsHiLo');
+	var forecast;
+	var alerts;
+	var wx_area;
+	var fc_area;
+	var fc_zone;
+	var alert_url;
+	
+	function onloadRoutines(){
+		getWx();
+		nwsAlert();
+	}
+
+	function nwsAlert(){
+		alerts=null;
+		if(alert_url == null)
+			{alert_url = 'https://api.weather.gov/alerts/active?zone=MNZ037'}
+		else{
+			alert_url = 'https://api.weather.gov/alerts/active?zone=' + fc_zone;
+		}
+		fetch(alert_url)
+                .then(res => res.json())
+                .then(out => {alerts = out.features})
+                .then(signalAlert);
+                //.catch(err => alert(err));
+	}
+
+	function signalAlert(){
+		var alertIcon = document.getElementById("alert");
+		if(alerts[0]){
+			alertIcon.style.display = 'inline-block';
+		}else{
+			alertIcon.style.display = 'none';
+		}
+	}
+
+	function showAlert(){
+		if(alerts){
+			var alertText = alerts[0].properties.headline + "\n\n" + alerts[0].properties.description;
+			showModal(alertText);
+		}
+	}
+
+	function showRadar(){
+		showModal('<center><img src="https://radar.weather.gov/ridge/standard/KDLH_loop.gif"></center>');
+	}
+
+
+	function showModal(content){
+		// Get the modal
+		var modal = document.getElementById("modal");
+		var modalContent = document.getElementById("modal-content");
+		modalContent.innerHTML = content;
+		 modal.style.display = "block";
+	}
+
+	window.onclick = function(event) {
+		if (event.target == modal) {
+		    modal.style.display = "none";
+		}
+	} 
+
+	function showForecast(period){
+		showModal(forecast.periods[period].detailedForecast);
+	}
+
+/*
+	function drawWind(){
+	        var windSpeed = $current.windSpeed.format('%2d', add_label=False);
+		var gustSpeed = $current.windGust.format('%2d', add_label=False);
+		#if $current.windDir.raw
+			var windDir = $current.windDir.raw;     //N = 0
+		#else
+			var windDir = 0;
+		#end if
+	        var centerX = 150;
+		var centerY = 150;
+	        var arrowHt = 40;
+		var c = document.getElementById("wind");
+		var rp = document.getElementById("rightPane");
+		var R = centerY*0.8;
+		
+		var ctx = c.getContext("2d");
+		if(isNight()){
+			ctx.strokeStyle = 'silver';
+			ctx.fillStyle = 'silver';
+		}else{ 
+			ctx.strokeStyle = 'black';
+			ctx.fillStyle = 'black';
+		}
+		ctx.font = '10vh "Open Sans"';
+		ctx.textBaseline = "middle";
+		ctx.textAlign = "center";
+		ctx.fillText(windSpeed + ' / G' + gustSpeed, centerX, centerY);
+		ctx.translate(centerX, centerY);
+		ctx.rotate((Math.PI/180)*windDir);
+		ctx.translate(-centerX, -centerY);
+		ctx.beginPath();
+		ctx.moveTo(centerX, centerY-R+arrowHt/2);
+		ctx.lineTo(centerX+10, centerY-R-arrowHt/2);
+		ctx.lineTo(centerX-10, centerY-R-arrowHt/2);
+		ctx.fill();
+		ctx.closePath();
+		
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.lineWidth = 3;
+		ctx.arc(centerX, centerY, R, 0, 2*Math.PI);
+		ctx.stroke();
+		}
+		*/
+
+	function getWx(fc_url = null){
+		if (fc_area == null){
+			fc_url = 'https://api.weather.gov/gridpoints/DLH/86,67/forecast'
+		}else{fc_url = fc_area.forecast};
+		fetch(fc_url)
+		.then(res => res.json())
+		.then(out => {forecast = out.properties})
+		.then(getHiLo)
+		.then(getForecast);
+		//.catch(err => alert(err));
+	}
+	
+	function getWxLocation(){
+		const url = 'https://api.weather.gov/points/'+wx_area.lat+','+wx_area.lon;
+		console.log('getting forecast url: ' + url);
+		fetch(url)
+		.then(res => res.json())
+		//.then(console.log(res))
+		.then(out => {fc_area = out.properties})
+		//.then(out => {fc_zone = out.properties.forecast_zone})
+		.then(getWx)
+		.then(getZone)
+		.then(nwsAlert);
+	}
+	
+	function getZone(){
+		const fcz_text = fc_area.forecastZone;
+		const fc_zone_url = new URL(fcz_text);
+		fc_zone = fc_zone_url.pathname.split('/').at(-1);
+		console.log(fc_zone);
+		//getWx(fc_area);
+	}
+
+	function getHiLo(){
+		var nwsHiLo = forecast.periods.slice(0,2).map(a => a.temperature).sort(function(a, b){return (a - b);});
+		document.getElementById('nwsHi').innerHTML = nwsHiLo[1];
+		document.getElementById('nwsLo').innerHTML = nwsHiLo[0];
+		var nwsFc = document.getElementById('nwsFc');
+		if(nwsFc.offsetWidth < nwsFc.scrollWidth){
+			nwsFc.innerHTML = '<marquee>'+forecast.periods[0].shortForecast+'</marquee>';
+		}else{
+			nwsFc.innerHTML = forecast.periods[0].shortForecast;
+		}
+	}
+
+	function getForecast(){
+		// Example usage:
+
+		if(forecast){
+			var nwsFcst = forecast.periods;
+			let d=1;
+			for (let i = 0; d<4; i++) {
+				if(forecast.periods[i].isDaytime && forecast.periods[i].name != 'Today' && forecast.periods[i].name != 'This Afternoon'){
+					document.getElementById('day'+d).innerHTML = 
+					
+					'<img src="'+forecast.periods[i].icon+'" width="100vw" onClick="showForecast('+i+')"/><br>'
+					+forecast.periods[i].name.slice(0,3)
+					+'&nbsp;<font color="red">' + forecast.periods[i].temperature + '</font>';
+					d++;
+				}
+		}
+		}
+	} 
+	
+	function localize(){
+		const query = encodeURIComponent(document.getElementById('searchBox').value);
+		const url = 'https://nominatim.openstreetmap.org/search?q='+query+'&format=json&limit=1&countrycodes=us';
+		
+		//get location data from Nominatim
+		var XHR = new XMLHttpRequest();
+		XHR.onreadystatechange = function () {
+		if (XHR.readyState == 4 && XHR.status == 200) {
+			console.log(XHR.responseText);
+			wx_area = JSON.parse(XHR.responseText)[0];
+			console.log(wx_area.display_name);
+			setLocationName(wx_area);
+			getWxLocation();
+			return wx_area;
+			
+		}
+		};
+		XHR.open("GET", url);
+		XHR.send();
+	}
+	
+	function setLocationName(wx_area){
+		document.getElementById('loc_name').innerHTML = wx_area.display_name;
+	}
+
+</script>
+</html>
