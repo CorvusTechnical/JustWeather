@@ -74,10 +74,10 @@
 			<marquee></marquee>
 			<!--<img src="daybarometer.png" width="100%"/>-->
 			<table id="forecast">
-				<tr>
-					<td id="day1" class="fcst"></td>
+				<tr id="daily_fc">
+					<!--<td id="day1" class="fcst"></td>
 					<td id="day2" class="fcst"></td>
-					<td id="day3" class="fcst"></td>
+					<td id="day3" class="fcst"></td>-->
 				</tr>
 			</table>
 		</div>
@@ -248,13 +248,17 @@
 		if(forecast){
 			var nwsFcst = forecast.periods;
 			let d=1;
-			for (let i = 0; d<4; i++) {
+			for (let i = 0; d<11; i++) {
 				if(forecast.periods[i].isDaytime && forecast.periods[i].name != 'Today' && forecast.periods[i].name != 'This Afternoon'){
-					document.getElementById('day'+d).innerHTML = 
-					
+					//document.getElementById('day'+d).innerHTML = 
+					document.getElementById('daily_fc').innerHTML =
+					'<td id="day2" class="fcst"><img src="'+forecast.periods[i].icon+'" width="100vw" onClick="showForecast('+i+')"/><br>'
+					+forecast.periods[i].name.slice(0,3)
+					+'&nbsp;<font color="red">' + forecast.periods[i].temperature + '</font></td>';
+					/*
 					'<img src="'+forecast.periods[i].icon+'" width="100vw" onClick="showForecast('+i+')"/><br>'
 					+forecast.periods[i].name.slice(0,3)
-					+'&nbsp;<font color="red">' + forecast.periods[i].temperature + '</font>';
+					+'&nbsp;<font color="red">' + forecast.periods[i].temperature + '</font>';*/
 					d++;
 				}
 		}
