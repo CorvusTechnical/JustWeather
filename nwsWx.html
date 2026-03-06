@@ -248,7 +248,7 @@
 		if(forecast){
 			var nwsFcst = forecast.periods;
 			let d=1;
-			for (let i = 0; d<11; i++) {
+			for (let i = 0; d<6; i++) {
 				if(forecast.periods[i].isDaytime && forecast.periods[i].name != 'Today' && forecast.periods[i].name != 'This Afternoon'){
 					//document.getElementById('day'+d).innerHTML = 
 					document.getElementById('daily_fc').innerHTML =
