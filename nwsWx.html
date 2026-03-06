@@ -62,7 +62,6 @@
 			<div id="moonPhase"></div>
 			<div id="sunsetTime"><img src="images/sunrise.png" id="sunIcon">$almanac.sunrise.format('%H:%M') &nbsp;<img src="images/sunset.png" id="sunIcon">$almanac.sunset.format('%H:%M')</div>-->
 </div>
-
 <div id="forecast">
 		<div id="radarContainer"><img class="radar" src="images/radar.png" height="1em" width="1em" onClick="showRadar()"></div>
 
@@ -209,7 +208,18 @@
 		//.catch(err => alert(err));
 	}
 	
+	function renderWait(){
+	//display a loading icon
+		document.getElementById('daily_fc').innerHTML = '<td class="fcst">Loading...</td>';
+		document.getElementById('nwsHi').innerHTML = '';
+		document.getElementById('nwsLo').innerHTML = '';
+		document.getElementById('nwsFc').innerHTML = '';
+	}
+	
+	
 	function getWxLocation(){
+		alerts = null;
+		renderWait();
 		const url = 'https://api.weather.gov/points/'+wx_area.lat+','+wx_area.lon;
 		console.log('getting forecast url: ' + url);
 		fetch(url)
@@ -243,16 +253,16 @@
 	}
 
 	function getForecast(){
-		// Example usage:
+		document.getElementById('daily_fc').innerHTML='';
 
 		if(forecast){
 			var nwsFcst = forecast.periods;
 			let d=1;
-			for (let i = 0; d<6; i++) {
+			for (let i = 0; d<7; i++) {
 				if(forecast.periods[i].isDaytime && forecast.periods[i].name != 'Today' && forecast.periods[i].name != 'This Afternoon'){
 					//document.getElementById('day'+d).innerHTML = 
-					document.getElementById('daily_fc').innerHTML =
-					'<td id="day2" class="fcst"><img src="'+forecast.periods[i].icon+'" width="100vw" onClick="showForecast('+i+')"/><br>'
+					document.getElementById('daily_fc').innerHTML = document.getElementById('daily_fc').innerHTML +
+					'<td class="fcst"><img src="'+forecast.periods[i].icon+'" width="100vw" onClick="showForecast('+i+')"/><br>'
 					+forecast.periods[i].name.slice(0,3)
 					+'&nbsp;<font color="red">' + forecast.periods[i].temperature + '</font></td>';
 					/*
@@ -287,7 +297,7 @@
 	}
 	
 	function setLocationName(wx_area){
-		document.getElementById('loc_name').innerHTML = wx_area.display_name;
+		document.getElementById('loc_name').innerHTML = wx_area.display_name.replace(', United States','');
 	}
 
 </script>
