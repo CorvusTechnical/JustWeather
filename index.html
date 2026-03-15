@@ -1,0 +1,457 @@
+<!--#errorCatcher Echo-->
+<!DOCTYPE html>
+<head>
+	<title>JustWeather</title>
+	<!--<link rel="stylesheet" href="/home/mdjames/tabletWxStyles.css">-->
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!--<meta http-equiv="refresh" content="60">-->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+	<style>
+		body 	{background-color: rgb(220, 224, 224); 
+				font-family: "Open Sans"
+				}
+				
+		#loc_name {height:1em; padding:.25em}
+		#modal {display: none; /* Hidden by default */
+		  position: fixed; /* Stay in place */
+		  z-index: 1; /* Sit on top */
+		  left: 0;
+		  top: 0;
+		  width: 100vw; /* Full width */
+		  height: 100vh; /* Full height */
+		  overflow: auto; /* Enable scroll if needed */
+		  background-color: rgb(0,0,0); /* Fallback color */
+		  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+		}
+		#modal-content{
+		background-color: #fefefe;
+		  margin: 15% auto; /* 15% from the top and centered */
+		  padding: 20px;
+		  border: 1px solid #888;
+		  width: 80vw; /* Could be more or less, depending on screen size */
+		}
+		
+		#alert{display:inline; height:1em;}
+		
+		td.fcst {text-align:center}
+	</style>				
+</head>
+
+<body onload="onloadRoutines()">
+
+<div id="modal">
+	<div id="modal-content"></div>
+</div>
+
+<div>
+	<input id="searchBox"></input><button onClick="fcArea.localize()">Search</button><button onclick="saveLocation()"><3</button>
+</div>
+
+<div id="loc_name"></div>
+
+<div id="almanac">
+			<div id="nwsHiLo">
+			<font color="red">Hi</font> <span id="nwsHi"></span>&nbsp;<font color="blue">Lo</font> <span id="nwsLo"></span>
+			</div>
+			<div id="alert" onClick="showAlert()"><img src="alert.png"></div>
+			<div id="nwsFc" onClick="showForecast(0)"></div>
+			<!--<div id="date">$current.dateTime.format('%b %d')</div>
+			<div id="moonPhase"></div>
+			<div id="sunsetTime"><img src="images/sunrise.png" id="sunIcon">$almanac.sunrise.format('%H:%M') &nbsp;<img src="images/sunset.png" id="sunIcon">$almanac.sunset.format('%H:%M')</div>-->
+</div>
+<div id="forecast">
+		<div id="radarContainer"><img class="radar" src="images/radar.png" height="1em" width="1em" onClick="showRadar()"></div>
+
+		<!--<div id="windContainer">
+			<canvas id="wind" width="300" height="300"></canvas>
+		<div>
+		-->
+		<div id="other">
+			<marquee></marquee>
+			<!--<img src="daybarometer.png" width="100%"/>-->
+			<table id="forecast">
+				<tr id="daily_fc">
+					<!--<td id="day1" class="fcst"></td>
+					<td id="day2" class="fcst"></td>
+					<td id="day3" class="fcst"></td>-->
+				</tr>
+			</table>
+		</div>
+	</div>
+	<div id="myLocations"></div>
+</body>
+
+<script>
+	//var resultsDiv = document.getElementById('nwsHiLo');
+	var forecast;
+	var alerts;
+	var wx_area;
+	//var fc_area;
+	var fc_zone;
+	var alert_url;
+	
+	function onloadRoutines(){
+		//getWx();
+		//nwsAlert();
+		getSavedLocations();
+		fcArea;
+	}
+	
+	const fcArea = {
+		/*What needs to be stored to retrieve all of the data needed for a location?
+		How do I get data?
+		1. Transform place name into lat lon (nominatim)
+		2. Ask NWS what forecast info exists for a lat lon
+		3. Ask NWS for forecast and current conditions
+		
+		> Response from nominatim
+		 >> lat, lon [store]
+		 >> display name [store]
+		
+		> From from points/lat,lon
+		 >> properties.forecast (forecastURL) [store]
+		 >> properties.fireWeatherZone (alert zone) [store]
+		 >> properties.radarStation	[store]
+		 >> astronomicalData.sunrise & sunset
+		 >> nwr.pointBroadtcast
+		 
+		*/
+		/*function save(){	//save this location to local storage
+			const entity = {
+				entity.lat = this.lat;
+				entity.lon = this.lon;
+				entity.displayName = this.displayName;
+				entity.forecastURL = this.forecastURL;
+			}
+			localStorage.setItem(this.id, entity);
+		}
+		*/		
+		
+		//const initialize(id){
+			//var obj = {}
+				//obj.id
+				//this.lat = a;
+				//this.lon
+				//this.displayName
+				//this.forecastURL
+				//this.forecast
+				//this.alertZone
+				//this.radarStation
+				//this.sunrise
+				//this.sunset
+				//this.radio
+				
+		/*getWx(){	//get forecast and current conditions	
+			if (this.forecastURL == null){
+				return null;
+			}else{fc_url = fcArea.forecastURL};
+			fetch(fc_url)
+			.then(res => res.json())
+			.then(out => {fcArea.forecast = out.properties})
+			.then(getHiLo)
+			.then(getForecast);
+			//.catch(err => alert(err));
+		},*/
+		fc_area: null,
+		
+		localize(){
+			const query = encodeURIComponent(document.getElementById('searchBox').value);
+			const url = 'https://nominatim.openstreetmap.org/search?q='+query+'&format=json&limit=1&countrycodes=us';
+			
+			//get location data from Nominatim
+			var XHR = new XMLHttpRequest();
+			XHR.onreadystatechange = function () {
+				if (XHR.readyState == 4 && XHR.status == 200) {
+					console.log(XHR.responseText);
+					const wx_area = JSON.parse(XHR.responseText)[0];
+					//Create an object if one is not saved
+					console.log(wx_area.display_name);
+					fcArea.displayName = wx_area.display_name.replace(', United States','');
+					fcArea.id = wx_area.place_id;
+					fcArea.lat = parseFloat(wx_area.lat).toFixed(3);
+					fcArea.lon = parseFloat(wx_area.lon).toFixed(4);
+					document.getElementById('loc_name').innerHTML = fcArea.displayName;
+					//setLocationName(this.displayName);
+					//getWxLocation();
+					//fcArea.getWxLocation();
+					getWx();
+					return wx_area;
+					
+				}
+			};
+			XHR.open("GET", url);
+			XHR.send();
+		},
+
+		getWxLocation(){	//retrieve nws points object
+			alerts = null;
+			fcArea.fc_area = null;
+			renderWait();
+			//const url = 'https://api.weather.gov/points/'+wx_area.lat+','+wx_area.lon;
+			const url = 'https://api.weather.gov/points/'+fcArea.lat+','+fcArea.lon;
+			//var fc_area;
+			console.log('getting forecast info - url: ' + url);
+			fetch(url)
+			.then(res => res.json())
+			//.then(console.log(res))
+			.then(out => {fcArea.fc_area = out.properties})
+			//.then(out => {fc_zone = out.properties.forecast_zone})
+			//.then(fc_area)
+			//.then(fcArea.forecast = fc_area)
+			//.then(getWx());
+			//.then(getZone)
+			//.then(nwsAlert);
+			return fcArea.fc_area;
+		},
+			
+		//return obj
+	};
+	
+	function forecast(fcArea){
+	
+	}
+	
+	function getSavedLocations(){
+		var myLocations = JSON.parse(localStorage.getItem('myLocations'));
+		if (myLocations == null){localStorage.setItem('myLocations','[]')}
+		const myLocationsDiv = document.getElementById('myLocations');
+		var locs = '';
+		if(myLocations){
+			for (let i = 0; i<myLocations.length; i++) {
+				locs = locs + '<button onClick="getWx(' + myLocations[i].forecast +')">' + myLocations[i].forecast + '</button></br>'
+			}
+			myLocationsDiv.innerHTML = locs;
+		}
+	}
+	
+	function saveLocation(){
+	//adds current forecast info to myLocations
+		if(fc_area == null){
+			return;
+		}
+		var myLocations = localStorage.getItem('myLocations');
+		var newLocations = JSON.parse(myLocations);
+		console.log(newLocations);
+		newLocations.push(fc_area);
+		
+		localStorage.setItem('myLocations',JSON.stringify(newLocations));
+		getSavedLocations();
+	}
+
+	function nwsAlert(){
+		alerts=null;
+		if(alert_url == null)
+			{alert_url = 'https://api.weather.gov/alerts/active?zone=MNZ037'}
+		else{
+			alert_url = 'https://api.weather.gov/alerts/active?zone=' + fc_zone;
+		}
+		fetch(alert_url)
+                .then(res => res.json())
+                .then(out => {alerts = out.features})
+                .then(signalAlert);
+                //.catch(err => alert(err));
+	}
+
+	function signalAlert(){
+		var alertIcon = document.getElementById("alert");
+		if(alerts[0]){
+			alertIcon.style.display = 'inline-block';
+		}else{
+			alertIcon.style.display = 'none';
+		}
+	}
+
+	function showAlert(){
+		if(alerts){
+			var alertText = alerts[0].properties.headline + "\n\n" + alerts[0].properties.description;
+			showModal(alertText);
+		}
+	}
+
+	function showRadar(){
+		showModal('<center><img src="https://radar.weather.gov/ridge/standard/KDLH_loop.gif"></center>');
+		// use radarStation in this url ^^
+	}
+
+	function showModal(content){
+		// Get the modal
+		var modal = document.getElementById("modal");
+		var modalContent = document.getElementById("modal-content");
+		modalContent.innerHTML = content;
+		 modal.style.display = "block";
+	}
+
+	window.onclick = function(event) {
+		if (event.target == modal) {
+		    modal.style.display = "none";
+		}
+	} 
+
+	function showForecast(period){
+		showModal(forecast.periods[period].detailedForecast);
+	}
+
+/*
+	function drawWind(){
+	        var windSpeed = $current.windSpeed.format('%2d', add_label=False);
+		var gustSpeed = $current.windGust.format('%2d', add_label=False);
+		#if $current.windDir.raw
+			var windDir = $current.windDir.raw;     //N = 0
+		#else
+			var windDir = 0;
+		#end if
+	        var centerX = 150;
+		var centerY = 150;
+	        var arrowHt = 40;
+		var c = document.getElementById("wind");
+		var rp = document.getElementById("rightPane");
+		var R = centerY*0.8;
+		
+		var ctx = c.getContext("2d");
+		if(isNight()){
+			ctx.strokeStyle = 'silver';
+			ctx.fillStyle = 'silver';
+		}else{ 
+			ctx.strokeStyle = 'black';
+			ctx.fillStyle = 'black';
+		}
+		ctx.font = '10vh "Open Sans"';
+		ctx.textBaseline = "middle";
+		ctx.textAlign = "center";
+		ctx.fillText(windSpeed + ' / G' + gustSpeed, centerX, centerY);
+		ctx.translate(centerX, centerY);
+		ctx.rotate((Math.PI/180)*windDir);
+		ctx.translate(-centerX, -centerY);
+		ctx.beginPath();
+		ctx.moveTo(centerX, centerY-R+arrowHt/2);
+		ctx.lineTo(centerX+10, centerY-R-arrowHt/2);
+		ctx.lineTo(centerX-10, centerY-R-arrowHt/2);
+		ctx.fill();
+		ctx.closePath();
+		
+		ctx.stroke();
+		ctx.beginPath();
+		ctx.lineWidth = 3;
+		ctx.arc(centerX, centerY, R, 0, 2*Math.PI);
+		ctx.stroke();
+		}
+		*/
+
+	//function getWx(fc_url = null){
+	async function getWx(){
+		forecast = null;
+		fc_area = await fcArea.getWxLocation();
+		fc_url = fc_area.forecast;
+		fetch(fc_url)
+		.then(res => res.json())
+		.then(out => {forecast = out.properties})
+		//.then(out => console.log(out.properties))
+		//.then(getHiLo)
+		//.then(getForecast);
+		//.then(getZone);
+		//.catch(err => alert(err));
+	}
+	
+	function renderWait(){
+		alert = null;
+	//display a loading icon
+		document.getElementById('daily_fc').innerHTML = '<td class="fcst">Loading...</td>';
+		document.getElementById('nwsHi').innerHTML = '';
+		document.getElementById('nwsLo').innerHTML = '';
+		document.getElementById('nwsFc').innerHTML = '';
+	}
+	
+/*	
+	function getWxLocation(){	//retrieve nws points object
+		alerts = null;
+		renderWait();
+		//const url = 'https://api.weather.gov/points/'+wx_area.lat+','+wx_area.lon;
+		const url = 'https://api.weather.gov/points/'+fcArea.lat+','+lfcArea.on;
+		console.log('getting forecast url: ' + url);
+		fetch(url)
+		.then(res => res.json())
+		//.then(console.log(res))
+		.then(out => {fc_area = out.properties})
+		//.then(out => {fc_zone = out.properties.forecast_zone})
+		.then(getWx)
+		.then(getZone)
+		.then(nwsAlert);
+	}
+*/
+	
+	function getZone(){	//get alert zone from 
+		const fcz_text = fc_area.forecastZone;
+		const fc_zone_url = new URL(fcz_text);
+		fc_zone = fc_zone_url.pathname.split('/').at(-1);
+		console.log(fc_zone);
+		//getWx(fc_area);
+	}
+
+	function getHiLo(){
+		var nwsHiLo = forecast.periods.slice(0,2).map(a => a.temperature).sort(function(a, b){return (a - b);});
+		document.getElementById('nwsHi').innerHTML = nwsHiLo[1];
+		document.getElementById('nwsLo').innerHTML = nwsHiLo[0];
+		var nwsFc = document.getElementById('nwsFc');
+		if(nwsFc.offsetWidth < nwsFc.scrollWidth){
+			nwsFc.innerHTML = '<marquee>'+forecast.periods[0].shortForecast+'</marquee>';
+		}else{
+			nwsFc.innerHTML = forecast.periods[0].shortForecast;
+		}
+	}
+
+	function getForecast(){
+		document.getElementById('daily_fc').innerHTML='';
+
+		if(forecast){
+			var nwsFcst = forecast.periods;
+			let d=1;
+			for (let i = 0; d<7; i++) {
+				if(forecast.periods[i].isDaytime && forecast.periods[i].name != 'Today' && forecast.periods[i].name != 'This Afternoon'){
+					//document.getElementById('day'+d).innerHTML = 
+					document.getElementById('daily_fc').innerHTML = document.getElementById('daily_fc').innerHTML +
+					'<td class="fcst"><img src="'+forecast.periods[i].icon+'" width="100vw" onClick="showForecast('+i+')"/><br>'
+					+forecast.periods[i].name.slice(0,3)
+					+'&nbsp;<font color="red">' + forecast.periods[i].temperature + '</font></td>';
+					/*
+					'<img src="'+forecast.periods[i].icon+'" width="100vw" onClick="showForecast('+i+')"/><br>'
+					+forecast.periods[i].name.slice(0,3)
+					+'&nbsp;<font color="red">' + forecast.periods[i].temperature + '</font>';*/
+					d++;
+				}
+		}
+		}
+	} 
+
+/*
+	function localize(){	//Convert a place name into lat, lon
+		const query = encodeURIComponent(document.getElementById('searchBox').value);
+		const url = 'https://nominatim.openstreetmap.org/search?q='+query+'&format=json&limit=1&countrycodes=us';
+		
+		//get location data from Nominatim
+		var XHR = new XMLHttpRequest();
+		XHR.onreadystatechange = function () {
+		if (XHR.readyState == 4 && XHR.status == 200) {
+			console.log(XHR.responseText);
+			const wx_area = JSON.parse(XHR.responseText)[0];
+			//Create an object if one is not saved
+			console.log(wx_area.display_name);
+			//setLocationName(wx_area);
+			document.getElementById('loc_name').innerHTML = wx_area.display_name;
+			//getWxLocation();
+			return wx_area;
+		}
+		};
+		XHR.open("GET", url);
+		XHR.send();
+	}
+*/
+	
+	function setLocationName(wx_area){
+		
+	}
+
+</script>
+</html>
