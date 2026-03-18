@@ -47,7 +47,7 @@
 </div>
 
 <div>
-	<input id="searchBox"></input><button onClick="fcArea.localize()">Search</button><button onclick="saveLocation()"><3</button>
+	<input id="searchBox"></input><button onClick="localize()">Search</button><button onclick="saveLocation()"><3</button>
 </div>
 
 <div id="loc_name"></div>
@@ -85,6 +85,20 @@
 </body>
 
 <script>
+	/*
+	1. If Search button is clicked, call localize() to initialize 
+	2. When a Place is initialized:
+		a. Check to see if fc_area is defined
+			b. if not, call Place.getWxLocation
+		b. Get forecast (getWx())
+
+
+	Properties of the window:
+
+	Properties of the location:
+
+
+	*/
 	//var resultsDiv = document.getElementById('nwsHiLo');
 	var forecast;
 	var alerts;
@@ -97,10 +111,10 @@
 		//getWx();
 		//nwsAlert();
 		getSavedLocations();
-		fcArea;
+		Place;
 	}
 	
-	const fcArea = {
+	const Place = {
 		/*What needs to be stored to retrieve all of the data needed for a location?
 		How do I get data?
 		1. Transform place name into lat lon (nominatim)
@@ -147,70 +161,41 @@
 		/*getWx(){	//get forecast and current conditions	
 			if (this.forecastURL == null){
 				return null;
-			}else{fc_url = fcArea.forecastURL};
+			}else{fc_url = Place.forecastURL};
 			fetch(fc_url)
 			.then(res => res.json())
-			.then(out => {fcArea.forecast = out.properties})
+			.then(out => {Place.forecast = out.properties})
 			.then(getHiLo)
 			.then(getForecast);
 			//.catch(err => alert(err));
 		},*/
 		fc_area: null,
-		
-		localize(){
-			const query = encodeURIComponent(document.getElementById('searchBox').value);
-			const url = 'https://nominatim.openstreetmap.org/search?q='+query+'&format=json&limit=1&countrycodes=us';
-			
-			//get location data from Nominatim
-			var XHR = new XMLHttpRequest();
-			XHR.onreadystatechange = function () {
-				if (XHR.readyState == 4 && XHR.status == 200) {
-					console.log(XHR.responseText);
-					const wx_area = JSON.parse(XHR.responseText)[0];
-					//Create an object if one is not saved
-					console.log(wx_area.display_name);
-					fcArea.displayName = wx_area.display_name.replace(', United States','');
-					fcArea.id = wx_area.place_id;
-					fcArea.lat = parseFloat(wx_area.lat).toFixed(3);
-					fcArea.lon = parseFloat(wx_area.lon).toFixed(4);
-					document.getElementById('loc_name').innerHTML = fcArea.displayName;
-					//setLocationName(this.displayName);
-					//getWxLocation();
-					//fcArea.getWxLocation();
-					getWx();
-					return wx_area;
-					
-				}
-			};
-			XHR.open("GET", url);
-			XHR.send();
-		},
 
-		getWxLocation(){	//retrieve nws points object
+		getWxLocation(){	//retrieve nws points object, populate Place.fc_area
 			alerts = null;
-			fcArea.fc_area = null;
+			Place.fc_area = null;
 			renderWait();
 			//const url = 'https://api.weather.gov/points/'+wx_area.lat+','+wx_area.lon;
-			const url = 'https://api.weather.gov/points/'+fcArea.lat+','+fcArea.lon;
+			const url = 'https://api.weather.gov/points/'+Place.lat+','+Place.lon;
 			//var fc_area;
 			console.log('getting forecast info - url: ' + url);
 			fetch(url)
 			.then(res => res.json())
 			//.then(console.log(res))
-			.then(out => {fcArea.fc_area = out.properties})
+			.then(out => {Place.fc_area = out.properties})
 			//.then(out => {fc_zone = out.properties.forecast_zone})
 			//.then(fc_area)
-			//.then(fcArea.forecast = fc_area)
+			//.then(Place.forecast = fc_area)
 			//.then(getWx());
 			//.then(getZone)
 			//.then(nwsAlert);
-			return fcArea.fc_area;
+			//return Place.fc_area;
 		},
 			
 		//return obj
 	};
 	
-	function forecast(fcArea){
+	function forecast(Place){
 	
 	}
 	
@@ -243,11 +228,7 @@
 
 	function nwsAlert(){
 		alerts=null;
-		if(alert_url == null)
-			{alert_url = 'https://api.weather.gov/alerts/active?zone=MNZ037'}
-		else{
-			alert_url = 'https://api.weather.gov/alerts/active?zone=' + fc_zone;
-		}
+		alert_url = 'https://api.weather.gov/alerts/active?zone=' + fc_zone;
 		fetch(alert_url)
                 .then(res => res.json())
                 .then(out => {alerts = out.features})
@@ -341,17 +322,21 @@
 		*/
 
 	//function getWx(fc_url = null){
-	async function getWx(){
+	async function getWx(Place){
 		forecast = null;
-		fc_area = await fcArea.getWxLocation();
-		fc_url = fc_area.forecast;
+		if(Place.fc_area == null){
+			Place.getWxLocation();
+		}
+		if(Place.)
+		//await Place.getWxLocation();
+		fc_url = this.Place.fc_area.forecast;
 		fetch(fc_url)
 		.then(res => res.json())
 		.then(out => {forecast = out.properties})
 		//.then(out => console.log(out.properties))
-		//.then(getHiLo)
-		//.then(getForecast);
-		//.then(getZone);
+		.then(getHiLo)
+		.then(getForecast)
+		.then(getZone);
 		//.catch(err => alert(err));
 	}
 	
@@ -369,7 +354,7 @@
 		alerts = null;
 		renderWait();
 		//const url = 'https://api.weather.gov/points/'+wx_area.lat+','+wx_area.lon;
-		const url = 'https://api.weather.gov/points/'+fcArea.lat+','+lfcArea.on;
+		const url = 'https://api.weather.gov/points/'+Place.lat+','+lPlace.on;
 		console.log('getting forecast url: ' + url);
 		fetch(url)
 		.then(res => res.json())
@@ -383,7 +368,7 @@
 */
 	
 	function getZone(){	//get alert zone from 
-		const fcz_text = fc_area.forecastZone;
+		const fcz_text = Place.fc_area.forecastZone;
 		const fc_zone_url = new URL(fcz_text);
 		fc_zone = fc_zone_url.pathname.split('/').at(-1);
 		console.log(fc_zone);
@@ -425,29 +410,33 @@
 		}
 	} 
 
-/*
-	function localize(){	//Convert a place name into lat, lon
-		const query = encodeURIComponent(document.getElementById('searchBox').value);
-		const url = 'https://nominatim.openstreetmap.org/search?q='+query+'&format=json&limit=1&countrycodes=us';
-		
-		//get location data from Nominatim
-		var XHR = new XMLHttpRequest();
-		XHR.onreadystatechange = function () {
-		if (XHR.readyState == 4 && XHR.status == 200) {
-			console.log(XHR.responseText);
-			const wx_area = JSON.parse(XHR.responseText)[0];
-			//Create an object if one is not saved
-			console.log(wx_area.display_name);
-			//setLocationName(wx_area);
-			document.getElementById('loc_name').innerHTML = wx_area.display_name;
-			//getWxLocation();
-			return wx_area;
+function localize(){
+			const query = encodeURIComponent(document.getElementById('searchBox').value);
+			const url = 'https://nominatim.openstreetmap.org/search?q='+query+'&format=json&limit=1&countrycodes=us';
+			//get location data from Nominatim
+			var XHR = new XMLHttpRequest();
+			XHR.onreadystatechange = function () {
+				if (XHR.readyState == 4 && XHR.status == 200) {
+					console.log(XHR.responseText);
+					const wx_area = JSON.parse(XHR.responseText)[0];
+					//Create an object if one is not saved
+					console.log(wx_area.display_name);
+					Place.displayName = wx_area.display_name.replace(', United States','');
+					Place.id = wx_area.place_id;
+					Place.lat = parseFloat(wx_area.lat).toFixed(3);
+					Place.lon = parseFloat(wx_area.lon).toFixed(4);
+					document.getElementById('loc_name').innerHTML = Place.displayName;
+					//setLocationName(this.displayName);
+					//getWxLocation();
+					//Place.getWxLocation();
+					//getWx();
+					//return wx_area;
+					
+				}
+			};
+			XHR.open("GET", url);
+			XHR.send();
 		}
-		};
-		XHR.open("GET", url);
-		XHR.send();
-	}
-*/
 	
 	function setLocationName(wx_area){
 		
