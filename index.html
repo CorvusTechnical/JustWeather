@@ -108,8 +108,6 @@
 	var alert_url;
 	
 	function onloadRoutines(){
-		//getWx();
-		//nwsAlert();
 		getSavedLocations();
 		Place;
 	}
@@ -174,22 +172,35 @@
 		getWxLocation(){	//retrieve nws points object, populate Place.fc_area
 			alerts = null;
 			Place.fc_area = null;
+			var fc_area;
 			renderWait();
 			//const url = 'https://api.weather.gov/points/'+wx_area.lat+','+wx_area.lon;
 			const url = 'https://api.weather.gov/points/'+Place.lat+','+Place.lon;
 			//var fc_area;
-			console.log('getting forecast info - url: ' + url);
+			console.log('getWxLocation() :: getting forecast info - url: ' + url);
 			fetch(url)
-			.then(res => res.json())
-			//.then(console.log(res))
-			.then(out => {Place.fc_area = out.properties})
+			.then(res => {
+					return res.json();
+				})
+			.then(data => {
+					return data.properties; 
+				})
+			.then(fc_area => {
+					console.log(fc_area);
+					Place.fc_area = fc_area;
+					//console.log(Place.fc_area);
+					getWx(Place);
+					//return Place.fc_area;
+				})
+			//.then(console.log(this.fc_area));
 			//.then(out => {fc_zone = out.properties.forecast_zone})
 			//.then(fc_area)
-			//.then(Place.forecast = fc_area)
+			//.then(Place.forecast = Place.fc_area.forecast);
 			//.then(getWx());
 			//.then(getZone)
 			//.then(nwsAlert);
 			//return Place.fc_area;
+			//return;
 		},
 			
 		//return obj
@@ -230,9 +241,10 @@
 		alerts=null;
 		alert_url = 'https://api.weather.gov/alerts/active?zone=' + fc_zone;
 		fetch(alert_url)
-                .then(res => res.json())
+                .then(res => {return res.json()})
                 .then(out => {alerts = out.features})
-                .then(signalAlert);
+                .then(signalAlert)
+				return;
                 //.catch(err => alert(err));
 	}
 
@@ -322,22 +334,26 @@
 		*/
 
 	//function getWx(fc_url = null){
-	async function getWx(Place){
+	function getWx(Place){
 		forecast = null;
 		if(Place.fc_area == null){
 			Place.getWxLocation();
 		}
-		if(Place.)
-		//await Place.getWxLocation();
-		fc_url = this.Place.fc_area.forecast;
-		fetch(fc_url)
-		.then(res => res.json())
-		.then(out => {forecast = out.properties})
-		//.then(out => console.log(out.properties))
-		.then(getHiLo)
-		.then(getForecast)
-		.then(getZone);
-		//.catch(err => alert(err));
+			//await Place.getWxLocation();
+			console.log('getWx() :: Retrieving forecast for ' + Place.displayName);
+			fc_url = Place.fc_area.forecast;
+			fetch(fc_url)
+			.then(res => res.json())
+			.then(out => {
+					forecast = out.properties;
+					return
+				})
+			//.then(out => console.log(out.properties))
+			.then(getHiLo)
+			.then(getForecast)
+			.then(getZone(Place))
+			.then(nwsAlert);
+			//.catch(err => alert(err));
 	}
 	
 	function renderWait(){
@@ -349,29 +365,10 @@
 		document.getElementById('nwsFc').innerHTML = '';
 	}
 	
-/*	
-	function getWxLocation(){	//retrieve nws points object
-		alerts = null;
-		renderWait();
-		//const url = 'https://api.weather.gov/points/'+wx_area.lat+','+wx_area.lon;
-		const url = 'https://api.weather.gov/points/'+Place.lat+','+lPlace.on;
-		console.log('getting forecast url: ' + url);
-		fetch(url)
-		.then(res => res.json())
-		//.then(console.log(res))
-		.then(out => {fc_area = out.properties})
-		//.then(out => {fc_zone = out.properties.forecast_zone})
-		.then(getWx)
-		.then(getZone)
-		.then(nwsAlert);
-	}
-*/
-	
-	function getZone(){	//get alert zone from 
-		const fcz_text = Place.fc_area.forecastZone;
-		const fc_zone_url = new URL(fcz_text);
-		fc_zone = fc_zone_url.pathname.split('/').at(-1);
-		console.log(fc_zone);
+	function getZone(Place){	//get alert zone from 
+		fc_zone = (Place.fc_area.fireWeatherZone).split('/').at(-1);
+		//console.log(fc_zone);
+		return fc_zone;
 		//getWx(fc_area);
 	}
 
@@ -410,26 +407,23 @@
 		}
 	} 
 
-function localize(){
+	function localize(){
 			const query = encodeURIComponent(document.getElementById('searchBox').value);
 			const url = 'https://nominatim.openstreetmap.org/search?q='+query+'&format=json&limit=1&countrycodes=us';
 			//get location data from Nominatim
 			var XHR = new XMLHttpRequest();
 			XHR.onreadystatechange = function () {
 				if (XHR.readyState == 4 && XHR.status == 200) {
-					console.log(XHR.responseText);
+					//console.log(XHR.responseText);
 					const wx_area = JSON.parse(XHR.responseText)[0];
 					//Create an object if one is not saved
-					console.log(wx_area.display_name);
+					console.log('localize() :: ' + wx_area.display_name);
 					Place.displayName = wx_area.display_name.replace(', United States','');
 					Place.id = wx_area.place_id;
 					Place.lat = parseFloat(wx_area.lat).toFixed(3);
 					Place.lon = parseFloat(wx_area.lon).toFixed(4);
 					document.getElementById('loc_name').innerHTML = Place.displayName;
-					//setLocationName(this.displayName);
-					//getWxLocation();
-					//Place.getWxLocation();
-					//getWx();
+					Place.getWxLocation();
 					//return wx_area;
 					
 				}
