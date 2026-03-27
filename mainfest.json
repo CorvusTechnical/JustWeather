@@ -2,9 +2,8 @@
   "name": "JustWeather",
   "icons": [
     {
-      "src": "icons/512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "icon.png",
+      "type": "image/png"
     }
   ],
   "start_url": "https://corvustechnical.github.io/JustWeather/",
