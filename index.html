@@ -34,7 +34,11 @@
 		  width: 80vw; /* Could be more or less, depending on screen size */
 		}
 		
-		#alert{display:inline; height:1em;}
+		#alert{display:none; height:1em;}
+
+		#almanac{display:none;}
+
+		#fcTileBox{overflow-x: scroll;}
 		
 		td.fcst {text-align:center}
 	</style>				
@@ -69,7 +73,7 @@
 			<canvas id="wind" width="300" height="300"></canvas>
 		<div>
 		-->
-		<div id="other">
+		<div id="fcTileBox">
 			<marquee></marquee>
 			<!--<img src="daybarometer.png" width="100%"/>-->
 			<table id="forecast">
@@ -358,6 +362,7 @@
 	
 	function renderWait(){
 		alert = null;
+		document.getElementById('almanac').style.display='inline-block';
 	//display a loading icon
 		document.getElementById('daily_fc').innerHTML = '<td class="fcst">Loading...</td>';
 		document.getElementById('nwsHi').innerHTML = '';
