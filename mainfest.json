@@ -7,7 +7,7 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "/",
+  "start_url": "https://corvustechnical.github.io/JustWeather/",
   "display": "standalone",
   "prefer_related_applications": false
 }
