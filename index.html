@@ -110,76 +110,28 @@
 	//var fc_area;
 	var fc_zone;
 	var alert_url;
+	var Places;
 	
 	function onloadRoutines(){
 		getSavedLocations();
-		Place;
 	}
 	
-	const Place = {
-		/*What needs to be stored to retrieve all of the data needed for a location?
-		How do I get data?
-		1. Transform place name into lat lon (nominatim)
-		2. Ask NWS what forecast info exists for a lat lon
-		3. Ask NWS for forecast and current conditions
-		
-		> Response from nominatim
-		 >> lat, lon [store]
-		 >> display name [store]
-		
-		> From from points/lat,lon
-		 >> properties.forecast (forecastURL) [store]
-		 >> properties.fireWeatherZone (alert zone) [store]
-		 >> properties.radarStation	[store]
-		 >> astronomicalData.sunrise & sunset
-		 >> nwr.pointBroadtcast
-		 
-		*/
-		/*function save(){	//save this location to local storage
-			const entity = {
-				entity.lat = this.lat;
-				entity.lon = this.lon;
-				entity.displayName = this.displayName;
-				entity.forecastURL = this.forecastURL;
-			}
-			localStorage.setItem(this.id, entity);
+	class Place {
+	
+		constructor(displayName, id, lat, lon){
+			this.displayName = displayName;
+			this.id = id;
+			this.lat = lat;
+			this.lon = lon;
+			this.getWxLocation();
 		}
-		*/		
-		
-		//const initialize(id){
-			//var obj = {}
-				//obj.id
-				//this.lat = a;
-				//this.lon
-				//this.displayName
-				//this.forecastURL
-				//this.forecast
-				//this.alertZone
-				//this.radarStation
-				//this.sunrise
-				//this.sunset
-				//this.radio
-				
-		/*getWx(){	//get forecast and current conditions	
-			if (this.forecastURL == null){
-				return null;
-			}else{fc_url = Place.forecastURL};
-			fetch(fc_url)
-			.then(res => res.json())
-			.then(out => {Place.forecast = out.properties})
-			.then(getHiLo)
-			.then(getForecast);
-			//.catch(err => alert(err));
-		},*/
-		fc_area: null,
 
 		getWxLocation(){	//retrieve nws points object, populate Place.fc_area
 			alerts = null;
-			Place.fc_area = null;
+			this.fc_area = null;
 			var fc_area;
 			renderWait();
-			//const url = 'https://api.weather.gov/points/'+wx_area.lat+','+wx_area.lon;
-			const url = 'https://api.weather.gov/points/'+Place.lat+','+Place.lon;
+			const url = 'https://api.weather.gov/points/'+this.lat+','+this.lon;
 			//var fc_area;
 			console.log('getWxLocation() :: getting forecast info - url: ' + url);
 			fetch(url)
@@ -191,51 +143,55 @@
 				})
 			.then(fc_area => {
 					console.log(fc_area);
-					Place.fc_area = fc_area;
-					//console.log(Place.fc_area);
-					getWx(Place);
-					//return Place.fc_area;
+					this.fc_area = fc_area;
+					//console.log(currentPlace.fc_area);
+					getWx(currentPlace);
+					return currentPlace.fc_area;
 				})
-			//.then(console.log(this.fc_area));
-			//.then(out => {fc_zone = out.properties.forecast_zone})
-			//.then(fc_area)
-			//.then(Place.forecast = Place.fc_area.forecast);
-			//.then(getWx());
-			//.then(getZone)
-			//.then(nwsAlert);
-			//return Place.fc_area;
-			//return;
-		},
-			
-		//return obj
+		}
+		
 	};
 	
-	function forecast(Place){
-	
+	function loadPlace(i){
+	//get the i-th place object in local storage, set the display name and getWx
+		currentPlace = Places[i];
+		document.getElementById('loc_name').innerHTML = currentPlace.displayName;
+		renderWait();
+		getWx(currentPlace);
 	}
 	
 	function getSavedLocations(){
-		var myLocations = JSON.parse(localStorage.getItem('myLocations'));
-		if (myLocations == null){localStorage.setItem('myLocations','[]')}
+		var myLocations 
+		try{
+			Places = JSON.parse(localStorage.getItem('myLocations'));
+			}
+		catch{Places = null};
+		if (Places == null){localStorage.setItem('myLocations','[]')}
 		const myLocationsDiv = document.getElementById('myLocations');
 		var locs = '';
-		if(myLocations){
-			for (let i = 0; i<myLocations.length; i++) {
-				locs = locs + '<button onClick="getWx(' + myLocations[i].forecast +')">' + myLocations[i].forecast + '</button></br>'
+		if(Places){
+			for (let i = 0; i<Places.length; i++) {
+				locs = locs + '<button onClick="loadPlace(' + i +')">' + Places[i].displayName + '</button><button onClick="removeLocation('+i+')">X</button></br>';
 			}
 			myLocationsDiv.innerHTML = locs;
 		}
 	}
 	
+	function removeLocation(i){
+		Places.splice(i,1);
+		localStorage.setItem('myLocations',JSON.stringify(Places));
+		getSavedLocations();
+	}
+	
 	function saveLocation(){
 	//adds current forecast info to myLocations
-		if(fc_area == null){
+		if(currentPlace.fc_area == null){
 			return;
 		}
 		var myLocations = localStorage.getItem('myLocations');
 		var newLocations = JSON.parse(myLocations);
 		console.log(newLocations);
-		newLocations.push(fc_area);
+		newLocations.push(currentPlace);
 		
 		localStorage.setItem('myLocations',JSON.stringify(newLocations));
 		getSavedLocations();
@@ -338,14 +294,14 @@
 		*/
 
 	//function getWx(fc_url = null){
-	function getWx(Place){
+	function getWx(currentPlace){
 		forecast = null;
-		if(Place.fc_area == null){
-			Place.getWxLocation();
+		if(currentPlace.fc_area == null){
+			currentPlace.getWxLocation();
 		}
-			//await Place.getWxLocation();
-			console.log('getWx() :: Retrieving forecast for ' + Place.displayName);
-			fc_url = Place.fc_area.forecast;
+			//await currentPlace.getWxLocation();
+			console.log('getWx() :: Retrieving forecast for ' + currentPlace.displayName);
+			fc_url = currentPlace.fc_area.forecast;
 			fetch(fc_url)
 			.then(res => res.json())
 			.then(out => {
@@ -355,7 +311,7 @@
 			//.then(out => console.log(out.properties))
 			.then(getHiLo)
 			.then(getForecast)
-			.then(getZone(Place))
+			.then(getZone(currentPlace))
 			.then(nwsAlert);
 			//.catch(err => alert(err));
 	}
@@ -370,8 +326,8 @@
 		document.getElementById('nwsFc').innerHTML = '';
 	}
 	
-	function getZone(Place){	//get alert zone from 
-		fc_zone = (Place.fc_area.fireWeatherZone).split('/').at(-1);
+	function getZone(currentPlace){	//get alert zone from 
+		fc_zone = (currentPlace.fc_area.fireWeatherZone).split('/').at(-1);
 		//console.log(fc_zone);
 		return fc_zone;
 		//getWx(fc_area);
@@ -402,10 +358,6 @@
 					'<td class="fcst"><img src="'+forecast.periods[i].icon+'" width="100vw" onClick="showForecast('+i+')"/><br>'
 					+forecast.periods[i].name.slice(0,3)
 					+'&nbsp;<font color="red">' + forecast.periods[i].temperature + '</font></td>';
-					/*
-					'<img src="'+forecast.periods[i].icon+'" width="100vw" onClick="showForecast('+i+')"/><br>'
-					+forecast.periods[i].name.slice(0,3)
-					+'&nbsp;<font color="red">' + forecast.periods[i].temperature + '</font>';*/
 					d++;
 				}
 		}
@@ -423,12 +375,13 @@
 					const wx_area = JSON.parse(XHR.responseText)[0];
 					//Create an object if one is not saved
 					console.log('localize() :: ' + wx_area.display_name);
-					Place.displayName = wx_area.display_name.replace(', United States','');
-					Place.id = wx_area.place_id;
-					Place.lat = parseFloat(wx_area.lat).toFixed(3);
-					Place.lon = parseFloat(wx_area.lon).toFixed(4);
-					document.getElementById('loc_name').innerHTML = Place.displayName;
-					Place.getWxLocation();
+					currentPlace = new Place(
+						wx_area.display_name.replace(', United States',''),
+						wx_area.place_id,
+						parseFloat(wx_area.lat).toFixed(3),
+						parseFloat(wx_area.lon).toFixed(4)
+						);
+					document.getElementById('loc_name').innerHTML = currentPlace.displayName;
 					//return wx_area;
 					
 				}
