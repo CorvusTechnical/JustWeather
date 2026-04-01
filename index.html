@@ -14,7 +14,28 @@
 				font-family: "Open Sans"
 				}
 				
+		#myLocations{
+			display: flex;
+			justify-content: flex-start;
+			overflow-x: scroll;
+			}
+		div.loc_card{
+			display: inline;
+			width: 33vw;
+			border: solid black 1px;
+			border-radius: .2em;
+			margin: .2em;
+			padding: .2em;
+			flex: 0 1 33vw
+			}
+		h1.lc{
+			font-size:1em;
+		}
+		
 		#loc_name {height:1em; padding:.25em}
+		
+		#locIcon {height:2em; position: absolute; right:0px; top:0px; margin: 1em;}
+		
 		#modal {display: none; /* Hidden by default */
 		  position: fixed; /* Stay in place */
 		  z-index: 1; /* Sit on top */
@@ -41,6 +62,8 @@
 		#fcTileBox{overflow-x: scroll;}
 		
 		td.fcst {text-align:center}
+		
+		center.logo {position: absolute; bottom: 0px; align:center;}
 	</style>				
 </head>
 
@@ -49,9 +72,11 @@
 <div id="modal">
 	<div id="modal-content"></div>
 </div>
-
+<img id="locIcon" src="ic_gps_fixed_24px.svg" onclick="getLocation()">
 <div>
-	<input id="searchBox"></input><button onClick="localize()">Search</button><button onclick="saveLocation()"><3</button>
+	<input id="searchBox" onFocus = "this.value=''"></input><button onClick="localize(this.value)">Search</button>
+	<button onclick="saveLocation()"><3</button>
+	
 </div>
 
 <div id="loc_name"></div>
@@ -86,6 +111,7 @@
 		</div>
 	</div>
 	<div id="myLocations"></div>
+	<center class="logo"><b>Just</b>Weather</center>
 </body>
 
 <script>
@@ -111,13 +137,23 @@
 	var fc_zone;
 	var alert_url;
 	var Places;
+	var currentPlace = null;
 	
 	function onloadRoutines(){
+		loadLastLocation();
 		getSavedLocations();
 	}
 	
-	class Place {
+	function loadLastLocation(){
+			currentPlace = JSON.parse(localStorage.getItem('currentPlace'));
+			if(currentPlace){
+				document.getElementById('loc_name').innerHTML = currentPlace.displayName;
+				renderWait();
+				getWx(currentPlace);
+			}
+	}
 	
+	class Place {
 		constructor(displayName, id, lat, lon){
 			this.displayName = displayName;
 			this.id = id;
@@ -155,6 +191,7 @@
 	function loadPlace(i){
 	//get the i-th place object in local storage, set the display name and getWx
 		currentPlace = Places[i];
+		localStorage.setItem('currentPlace',JSON.stringify(currentPlace));
 		document.getElementById('loc_name').innerHTML = currentPlace.displayName;
 		renderWait();
 		getWx(currentPlace);
@@ -171,16 +208,29 @@
 		var locs = '';
 		if(Places){
 			for (let i = 0; i<Places.length; i++) {
-				locs = locs + '<button onClick="loadPlace(' + i +')">' + Places[i].displayName + '</button><button onClick="removeLocation('+i+')">X</button></br>';
+				//locs = locs + '<button onClick="loadPlace(' + i +')">' + Places[i].displayName + '</button><button //onClick="removeLocation('+i+')">X</button></br>';
+				locs = locs + '<div class="loc_card" onClick="loadPlace('+ i +')" id="lc' + i + '"><h1 class="lc">'+Places[i].displayName+'</h1><button onClick="removeLocation('+i+')">(X)</button><button onClick="renameLocation('+i+')">(e)</button></br></div>'
 			}
 			myLocationsDiv.innerHTML = locs;
 		}
 	}
 	
 	function removeLocation(i){
-		Places.splice(i,1);
-		localStorage.setItem('myLocations',JSON.stringify(Places));
-		getSavedLocations();
+		var userResponse = window.confirm('Delete ' + Places[i].displayName + '?');
+		if(userResponse){
+			Places.splice(i,1);
+			localStorage.setItem('myLocations',JSON.stringify(Places));
+			getSavedLocations();}
+			else{ return}
+	}
+	
+	function renameLocation(i){
+		var newName = window.prompt('New Place Name: ');
+		if(newName){
+			Places[i].displayName = newName;
+			localStorage.setItem('myLocations',JSON.stringify(Places));
+			getSavedLocations();
+		}
 	}
 	
 	function saveLocation(){
@@ -188,13 +238,17 @@
 		if(currentPlace.fc_area == null){
 			return;
 		}
-		var myLocations = localStorage.getItem('myLocations');
-		var newLocations = JSON.parse(myLocations);
-		console.log(newLocations);
-		newLocations.push(currentPlace);
-		
-		localStorage.setItem('myLocations',JSON.stringify(newLocations));
-		getSavedLocations();
+		var myLocations = JSON.parse(localStorage.getItem('myLocations'));
+		var ids = myLocations.map(locn => locn.id);
+		if(ids.indexOf(currentPlace.id)==-1){
+			var newLocations = myLocations;
+			newLocations.push(currentPlace);
+			
+			localStorage.setItem('myLocations',JSON.stringify(newLocations));
+			getSavedLocations();
+		}else{
+			console.log('Location already Saved');
+		}
 	}
 
 	function nwsAlert(){
@@ -364,8 +418,8 @@
 		}
 	} 
 
-	function localize(){
-			const query = encodeURIComponent(document.getElementById('searchBox').value);
+	function localize(query){
+			//const query = encodeURIComponent(document.getElementById('searchBox').value);
 			const url = 'https://nominatim.openstreetmap.org/search?q='+query+'&format=json&limit=1&countrycodes=us';
 			//get location data from Nominatim
 			var XHR = new XMLHttpRequest();
@@ -393,6 +447,45 @@
 	function setLocationName(wx_area){
 		
 	}
+	
+	function getLocation() {
+  if (navigator.geolocation) {
+    // Geolocation is available
+    navigator.geolocation.getCurrentPosition(showPosition, showError);
+  } else {
+    // Geolocation is not supported by this browser
+    alert("Geolocation is not supported by this browser.");
+  }
+}
+
+function showPosition(position) {
+  const latitude = position.coords.latitude;
+  const longitude = position.coords.longitude;
+  // Use the latitude and longitude (e.g., display on a map or log to console)
+  localize(latitude+ ', '+longitude);
+  console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
+  // Example: Display on a webpage element
+ // document.getElementById("location-info").innerHTML = `Latitude: ${latitude}<br>Longitude: ${longitude}`;
+}
+
+function showError(error) {
+  switch(error.code) {
+    case error.PERMISSION_DENIED:
+      alert("User denied the request for Geolocation.");
+      break;
+    case error.POSITION_UNAVAILABLE:
+      alert("Location information is unavailable.");
+      break;
+    case error.TIMEOUT:
+      alert("The request to get user location timed out.");
+      break;
+    case error.UNKNOWN_ERROR:
+      alert("An unknown error occurred.");
+      break;
+  }
+}
+
+
 
 </script>
 </html>
