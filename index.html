@@ -74,7 +74,7 @@
 </div>
 <img id="locIcon" src="ic_gps_fixed_24px.svg" onclick="getLocation()">
 <div>
-	<input id="searchBox" onFocus = "this.value=''"></input><button onClick="localize(this.value)">Search</button>
+	<input id="searchBox" onFocus = "this.value=''"></input><button onClick="localize(document.getElementById('searchBox').value)">Search</button>
 	<button onclick="saveLocation()"><3</button>
 	
 </div>
@@ -180,6 +180,7 @@
 			.then(fc_area => {
 					console.log(fc_area);
 					this.fc_area = fc_area;
+					localStorage.setItem('currentPlace',JSON.stringify(this));
 					//console.log(currentPlace.fc_area);
 					getWx(currentPlace);
 					return currentPlace.fc_area;
@@ -378,6 +379,7 @@
 		document.getElementById('nwsHi').innerHTML = '';
 		document.getElementById('nwsLo').innerHTML = '';
 		document.getElementById('nwsFc').innerHTML = '';
+		document.getElementById('searchBox').value = '';
 	}
 	
 	function getZone(currentPlace){	//get alert zone from 
@@ -420,6 +422,7 @@
 
 	function localize(query){
 			//const query = encodeURIComponent(document.getElementById('searchBox').value);
+			console.log(query);
 			const url = 'https://nominatim.openstreetmap.org/search?q='+query+'&format=json&limit=1&countrycodes=us';
 			//get location data from Nominatim
 			var XHR = new XMLHttpRequest();
@@ -427,6 +430,8 @@
 				if (XHR.readyState == 4 && XHR.status == 200) {
 					//console.log(XHR.responseText);
 					const wx_area = JSON.parse(XHR.responseText)[0];
+					console.log(wx_area);
+					if(wx_area){
 					//Create an object if one is not saved
 					console.log('localize() :: ' + wx_area.display_name);
 					currentPlace = new Place(
@@ -437,6 +442,10 @@
 						);
 					document.getElementById('loc_name').innerHTML = currentPlace.displayName;
 					//return wx_area;
+					}
+					else{
+						console.log('Location not found');
+					}
 					
 				}
 			};
@@ -449,41 +458,41 @@
 	}
 	
 	function getLocation() {
-  if (navigator.geolocation) {
-    // Geolocation is available
-    navigator.geolocation.getCurrentPosition(showPosition, showError);
-  } else {
-    // Geolocation is not supported by this browser
-    alert("Geolocation is not supported by this browser.");
-  }
-}
+	  if (navigator.geolocation) {
+		// Geolocation is available
+		navigator.geolocation.getCurrentPosition(showPosition, showError);
+	  } else {
+		// Geolocation is not supported by this browser
+		alert("Geolocation is not supported by this browser.");
+	  }
+	}
 
-function showPosition(position) {
-  const latitude = position.coords.latitude;
-  const longitude = position.coords.longitude;
-  // Use the latitude and longitude (e.g., display on a map or log to console)
-  localize(latitude+ ', '+longitude);
-  console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
-  // Example: Display on a webpage element
- // document.getElementById("location-info").innerHTML = `Latitude: ${latitude}<br>Longitude: ${longitude}`;
-}
+	function showPosition(position) {
+	  const latitude = position.coords.latitude;
+	  const longitude = position.coords.longitude;
+	  // Use the latitude and longitude (e.g., display on a map or log to console)
+	  localize(latitude+ ', '+longitude);
+	  console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
+	  // Example: Display on a webpage element
+	 // document.getElementById("location-info").innerHTML = `Latitude: ${latitude}<br>Longitude: ${longitude}`;
+	}
 
-function showError(error) {
-  switch(error.code) {
-    case error.PERMISSION_DENIED:
-      alert("User denied the request for Geolocation.");
-      break;
-    case error.POSITION_UNAVAILABLE:
-      alert("Location information is unavailable.");
-      break;
-    case error.TIMEOUT:
-      alert("The request to get user location timed out.");
-      break;
-    case error.UNKNOWN_ERROR:
-      alert("An unknown error occurred.");
-      break;
-  }
-}
+	function showError(error) {
+	  switch(error.code) {
+		case error.PERMISSION_DENIED:
+		  alert("User denied the request for Geolocation.");
+		  break;
+		case error.POSITION_UNAVAILABLE:
+		  alert("Location information is unavailable.");
+		  break;
+		case error.TIMEOUT:
+		  alert("The request to get user location timed out.");
+		  break;
+		case error.UNKNOWN_ERROR:
+		  alert("An unknown error occurred.");
+		  break;
+	  }
+	}
 
 
 
