@@ -26,13 +26,13 @@
 			border-radius: .2em;
 			margin: .2em;
 			padding: .2em;
-			flex: 0 1 33vw
+			flex: 0 0 30vw;
 			}
 		h1.lc{
 			font-size:1em;
 		}
 		
-		#loc_name {height:1em; padding:.25em}
+		#loc_name {height:fit-content; padding:.25em}
 		
 		#locIcon {height:2em; position: absolute; right:0px; top:0px; margin: 1em;}
 		
@@ -110,6 +110,7 @@
 			</table>
 		</div>
 	</div>
+	<hr>
 	<div id="myLocations"></div>
 	<center class="logo"><b>Just</b>Weather</center>
 </body>
@@ -154,8 +155,9 @@
 	}
 	
 	class Place {
-		constructor(displayName, id, lat, lon){
+		constructor(displayName, id, lat, lon, order=99){
 			this.displayName = displayName;
+			this.order = order;
 			this.id = id;
 			this.lat = lat;
 			this.lon = lon;
@@ -208,11 +210,31 @@
 		const myLocationsDiv = document.getElementById('myLocations');
 		var locs = '';
 		if(Places){
+			Places.sort((a,b) => a.order - b.order);			
 			for (let i = 0; i<Places.length; i++) {
 				//locs = locs + '<button onClick="loadPlace(' + i +')">' + Places[i].displayName + '</button><button //onClick="removeLocation('+i+')">X</button></br>';
-				locs = locs + '<div class="loc_card" onClick="loadPlace('+ i +')" id="lc' + i + '"><h1 class="lc">'+Places[i].displayName+'</h1><button onClick="removeLocation('+i+')">(X)</button><button onClick="renameLocation('+i+')">(e)</button></br></div>'
+				locs = locs + '<div class="loc_card" onClick="loadPlace('+ i +')" id="lc'+ i + '">\
+					<h1 class="lc">'
+					+Places[i].displayName+'</h1>\
+					<button onClick="removeLocation('+i+')">(X)</button>\
+					<button onClick="renameLocation('+i+')">(e)</button><br>\
+					<input style="width: 2em;" type="number" size="2" value="'+Places[i].order+'" onChange="reorderLocation('+i+', this.value)"></input>\
+					<br></div>'
 			}
 			myLocationsDiv.innerHTML = locs;
+		}
+	}
+
+	function reorderLocation(i, val){
+		val = parseFloat(val);
+		console.log(val);
+		if(Number.isInteger(val)){
+			console.log('changing order');
+			Places[i].order = val;
+			localStorage.setItem('myLocations',JSON.stringify(Places));
+			getSavedLocations();
+		}else{
+			getSavedLocations();
 		}
 	}
 	
@@ -241,10 +263,15 @@
 		}
 		var myLocations = JSON.parse(localStorage.getItem('myLocations'));
 		var ids = myLocations.map(locn => locn.id);
+		//Add sortOrder if it does not exist
+		for(i=0; i++; myLocations.length){
+			if(!myLocations[i].order){
+				myLocations.order=i;
+			}
+		}
 		if(ids.indexOf(currentPlace.id)==-1){
 			var newLocations = myLocations;
 			newLocations.push(currentPlace);
-			
 			localStorage.setItem('myLocations',JSON.stringify(newLocations));
 			getSavedLocations();
 		}else{
@@ -418,7 +445,9 @@
 				}
 		}
 		}
-	} 
+	}
+
+
 
 	function localize(query){
 			//const query = encodeURIComponent(document.getElementById('searchBox').value);
