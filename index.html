@@ -82,6 +82,7 @@
 <div id="loc_name"></div>
 
 <div id="almanac">
+			<div id="currentConditions"></div>
 			<div id="nwsHiLo">
 			<font color="red">Hi</font> <span id="nwsHi"></span>&nbsp;<font color="blue">Lo</font> <span id="nwsLo"></span>
 			</div>
@@ -112,7 +113,8 @@
 	</div>
 	<hr>
 	<div id="myLocations"></div>
-	<center class="logo"><b>Just</b>Weather</center>
+	<div ><center class="logo"><b>Just</b>Weather</center></div>
+	
 </body>
 
 <script>
@@ -420,6 +422,7 @@
 		var nwsHiLo = forecast.periods.slice(0,2).map(a => a.temperature).sort(function(a, b){return (a - b);});
 		document.getElementById('nwsHi').innerHTML = nwsHiLo[1];
 		document.getElementById('nwsLo').innerHTML = nwsHiLo[0];
+		document.getElementById('currentConditions').innerHTML = '<img src="'+forecast.periods[0].icon+'" width="100vw" onClick="showForecast(0)"/><br>'
 		var nwsFc = document.getElementById('nwsFc');
 		if(nwsFc.offsetWidth < nwsFc.scrollWidth){
 			nwsFc.innerHTML = '<marquee>'+forecast.periods[0].shortForecast+'</marquee>';
@@ -439,8 +442,10 @@
 					//document.getElementById('day'+d).innerHTML = 
 					document.getElementById('daily_fc').innerHTML = document.getElementById('daily_fc').innerHTML +
 					'<td class="fcst"><img src="'+forecast.periods[i].icon+'" width="100vw" onClick="showForecast('+i+')"/><br>'
+					+'<font color="blue">' + forecast.periods[i-1].temperature + '</font>&nbsp;'
 					+forecast.periods[i].name.slice(0,3)
-					+'&nbsp;<font color="red">' + forecast.periods[i].temperature + '</font></td>';
+					+'&nbsp;<font color="red">' + forecast.periods[i].temperature + '</font> \
+					</td>';
 					d++;
 				}
 		}
