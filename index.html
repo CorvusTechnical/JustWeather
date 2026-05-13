@@ -328,7 +328,7 @@
 	} 
 
 	function showForecast(period){
-		showModal(forecast.periods[period].detailedForecast);
+		showModal('Day: <br>' + forecast.periods[period].detailedForecast + '<br>Evening: '+ forecast.periods[period+1].detailedForecast);
 	}
 
 /*
