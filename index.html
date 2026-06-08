@@ -316,7 +316,9 @@
 	}
 
 	function showRadar(){
-		showModal('<center><img src="https://radar.weather.gov/ridge/standard/KDLH_loop.gif"></center>');
+		if(currentPlace.fc_area.radarStation){
+			showModal('<center><img src="https://radar.weather.gov/ridge/standard/'+currentPlace.fc_area.radarStation+'_loop.gif"></center>');
+		}
 		// use radarStation in this url ^^
 	}
 
