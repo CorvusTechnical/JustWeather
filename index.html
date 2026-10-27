@@ -1,7 +1,7 @@
 <!--#errorCatcher Echo-->
 <!DOCTYPE html>
 <head>
-	<title>JustWeather</title>
+	<title>JustHomeWeather</title>
 	<!--<link rel="stylesheet" href="/home/mdjames/tabletWxStyles.css">-->
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,17 +9,28 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
-	<script>
-  		if ('serviceWorker' in navigator) {
-   		 window.addEventListener('load', () => {
-	      navigator.serviceWorker.register('/JustWeather/service-worker.js');
-    	});
-  		}
-	</script>
+
 	<style>
+		#alert{display:none; height:1em;}
+		#almanac {font-size: 1.5em; height:50vh; width: 100vw; padding-left: 1em; padding-right: 1em;}
+
 		body 	{background-color: rgb(220, 224, 224); 
-				font-family: "Open Sans"
+				font-family: "Open Sans";
 				}
+
+		h1.lc{font-size:1em;}
+
+		#forecast {height:25%}
+
+		#nwsfc {font-size: 3em;}
+
+		#outTemp {font-size:4em;}
+
+		img.sunIcon {height:1em;}
+
+		img.fcTile{height:25vh;}
+
+		#inTemp {font-size: 2em; position:relative; bottom:0.5em; right: 1.7em;}
 				
 		#myLocations{
 			display: flex;
@@ -35,11 +46,9 @@
 			padding: .2em;
 			flex: 0 0 30vw;
 			}
-		h1.lc{
-			font-size:1em;
-		}
+
 		
-		#loc_name {height:fit-content; padding:.25em}
+		//#loc_name {height:fit-content; padding:.25em}
 		
 		#locIcon {height:2em; position: absolute; right:0px; top:0px; margin: 1em;}
 		
@@ -62,9 +71,11 @@
 		  width: 80vw; /* Could be more or less, depending on screen size */
 		}
 		
-		#alert{display:none; height:1em;}
+		#placePanel{height:100vh;
+			border: solid 5px black; 
+			border-radius:1em;}
 
-		#almanac{display:none;}
+		/*#almanac{display:none;}*/
 
 		#fcTileBox{overflow-x: scroll;}
 		
@@ -79,28 +90,32 @@
 <div id="modal">
 	<div id="modal-content"></div>
 </div>
-<img id="locIcon" src="ic_gps_fixed_24px.svg" onclick="getLocation()">
-<div>
-	<input id="searchBox" onFocus = "this.value=''"></input><button onClick="localize(document.getElementById('searchBox').value)">Search</button>
-	<button onclick="saveLocation()"><3</button>
-	
-</div>
+<!--<img id="locIcon" src="ic_gps_fixed_24px.svg" onclick="getLocation()">-->
 
-<div id="loc_name"></div>
+<div id="placePanel">
+	<div id="loc_name"></div>
 
-<div id="almanac">
-			<div id="currentConditions"></div>
+	<div id="almanac">
+			<div id="inoutTemp">
+				<span id="outTemp">--</span>&deg;F
+				<span width="1em"> </span>
+				<img src="./house.png" style="height:4em;">
+				<span id="inTemp">--</span>
+				<img src="radar.png" style="height:3em; width:3em;" onClick="showRadar()">
+			</div>
+			<!--<div id="radarContainer">-->
+			<!--</div>-->
 			<div id="nwsHiLo">
 			<font color="red">Hi</font> <span id="nwsHi"></span>&nbsp;<font color="blue">Lo</font> <span id="nwsLo"></span>
 			</div>
 			<div id="alert" onClick="showAlert()"><img src="alert.png"></div>
 			<div id="nwsFc" onClick="showForecast(0)"></div>
-			<!--<div id="date">$current.dateTime.format('%b %d')</div>
+			<div id="date"></div>
 			<div id="moonPhase"></div>
-			<div id="sunsetTime"><img src="images/sunrise.png" id="sunIcon">$almanac.sunrise.format('%H:%M') &nbsp;<img src="images/sunset.png" id="sunIcon">$almanac.sunset.format('%H:%M')</div>-->
-</div>
-<div id="forecast">
-		<div id="radarContainer"><img class="radar" src="radar.png" height="1em" width="1em" onClick="showRadar()"></div>
+			<div><img src="sunrise.png" class="sunIcon"><span id="sunriseTime"></span>&nbsp;<img src="sunset.png" class="sunIcon"><span id="sunsetTime"></span></div>
+	</div>
+	<div id="forecast">
+		
 
 		<!--<div id="windContainer">
 			<canvas id="wind" width="300" height="300"></canvas>
@@ -111,20 +126,65 @@
 			<!--<img src="daybarometer.png" width="100%"/>-->
 			<table id="forecast">
 				<tr id="daily_fc">
-					<!--<td id="day1" class="fcst"></td>
-					<td id="day2" class="fcst"></td>
-					<td id="day3" class="fcst"></td>-->
 				</tr>
 			</table>
 		</div>
 	</div>
-	<hr>
-	<div id="myLocations"></div>
-	<div ><center class="logo"><b>Just</b>Weather</center></div>
+</div>
+<hr>
+<div>
+	<input id="searchBox" onFocus = "this.value=''"></input><button onClick="localize(document.getElementById('searchBox').value)">Search</button>
+	<button onclick="saveLocation()"><3</button>
+</div>
+<hr>
+<div id="myLocations"></div>
 	
 </body>
 
+    <!-- Load HA WebSocket Bus Module -->
+<script src="haws.umd.js"></script>
+    <script type="module">
+
+	const HASS_URL    = location.origin //'http://192.168.1.175:8123';
+	const OTEMP_ENTITY = "sensor.gw2000b_wifi408f_outdoor_temperature";
+	const ITEMP_ENTITY = "sensor.gw2000b_wifi408f_t_h_temp_ch1";
+
+	async function startHA() {
+	let auth;
+	try {
+		auth = await HAWS.getAuth({ hassUrl: HASS_URL });
+	} catch (err) {
+	console.error("Auth failed:", err, "| hassUrl:", HASS_URL);
+	return;
+	}
+
+	const conn = await HAWS.createConnection({ auth });
+
+	HAWS.subscribeEntities(conn, (entities) => {
+		var date = new Date();
+		const ot = entities[OTEMP_ENTITY];
+		if (!ot) return;
+		const no = parseFloat(ot.state);
+		document.getElementById("outTemp").innerText = isNaN(no)
+		? "--"
+		: Math.round(no);
+
+		const it = entities[ITEMP_ENTITY];
+		if (!it) return;
+		const ni = parseFloat(it.state);
+		document.getElementById("inTemp").innerText = isNaN(ni)
+		? "--"
+		: Math.round(ni);
+
+		document.getElementById("date").innerText = date.toDateString();
+	});
+	}
+
+	startHA();
+</script>
+
 <script>
+	
 	/*
 	1. If Search button is clicked, call localize() to initialize 
 	2. When a Place is initialized:
@@ -340,8 +400,7 @@
 		showModal('<b>Day:</b> <br>' + forecast.periods[period].detailedForecast + '<br><br><b>Evening:</b> <br>'+ forecast.periods[period+1].detailedForecast);
 	}
 
-/*
-	function drawWind(){
+	/*function drawWind(){
 	        var windSpeed = $current.windSpeed.format('%2d', add_label=False);
 		var gustSpeed = $current.windGust.format('%2d', add_label=False);
 		#if $current.windDir.raw
@@ -383,8 +442,7 @@
 		ctx.lineWidth = 3;
 		ctx.arc(centerX, centerY, R, 0, 2*Math.PI);
 		ctx.stroke();
-		}
-		*/
+		}*/
 
 	//function getWx(fc_url = null){
 	function getWx(currentPlace){
@@ -431,7 +489,7 @@
 		var nwsHiLo = forecast.periods.slice(0,2).map(a => a.temperature).sort(function(a, b){return (a - b);});
 		document.getElementById('nwsHi').innerHTML = nwsHiLo[1];
 		document.getElementById('nwsLo').innerHTML = nwsHiLo[0];
-		document.getElementById('currentConditions').innerHTML = '<img src="'+forecast.periods[0].icon+'" width="100vw" onClick="showForecast(0)"/><br>'
+		//document.getElementById('currentConditions').innerHTML = '<img src="'+forecast.periods[0].icon+'" width="100vw" onClick="showForecast(0)"/><br>'
 		var nwsFc = document.getElementById('nwsFc');
 		if(nwsFc.offsetWidth < nwsFc.scrollWidth){
 			nwsFc.innerHTML = '<marquee>'+forecast.periods[0].shortForecast+'</marquee>';
@@ -445,19 +503,23 @@
 
 		if(forecast){
 			var nwsFcst = forecast.periods;
+			var sunrise = new Date(currentPlace.fc_area.astronomicalData.sunrise);
+			document.getElementById('sunriseTime').innerHTML = String(sunrise.getHours()).padStart(2,'0') + ':' + String(sunrise.getMinutes()).padStart(2,'0');
+			var sunset = new Date(currentPlace.fc_area.astronomicalData.sunset);
+			document.getElementById('sunsetTime').innerHTML = String(sunset.getHours()).padStart(2,'0') + ':' + String(sunset.getMinutes()).padStart(2,'0');
 			let d=1;
 			for (let i = 1; i<13; i++) {
 				if(forecast.periods[i].isDaytime && forecast.periods[i].name != 'Today' && forecast.periods[i].name != 'This Afternoon'){
 					//document.getElementById('day'+d).innerHTML = 
 					document.getElementById('daily_fc').innerHTML = document.getElementById('daily_fc').innerHTML +
-					'<td class="fcst"><img src="'+forecast.periods[i].icon+'" width="100vw" onClick="showForecast('+i+')"/><br>'
+					'<td class="fcst"><img class="fcTile" src="'+forecast.periods[i].icon+'" onClick="showForecast('+i+')"/><br>'
 					+'<font color="blue">' + forecast.periods[i-1].temperature + '</font>&nbsp;'
 					+forecast.periods[i].name.slice(0,3)
 					+'&nbsp;<font color="red">' + forecast.periods[i].temperature + '</font> \
 					</td>';
 					d++;
 				}
-		}
+			}
 		}
 	}
 
