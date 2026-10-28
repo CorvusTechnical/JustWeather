@@ -11,32 +11,50 @@
 	<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
 
 	<style>
-		#alert{display:none; height:1em;}
-		#almanac {font-size: 1.5em; height:50vh; width: 100vw; padding-left: 1em; padding-right: 1em;}
+		#alert{
+			display:none; 
+			height:1em;
+		}
 
-		body 	{background-color: rgb(220, 224, 224); 
-				font-family: "Open Sans";
-				}
+		#almanac {
+			font-size: 1.5em; 
+			height:50vh; 
+			width: 100vw; 
+			padding-left: 1em; 
+			padding-right: 1em;
+		}
 
+		body {
+			background-color: rgb(220, 224, 224); 
+			font-family: "Open Sans";
+		}
+
+		#date {height: 2em;}
 		h1.lc{font-size:1em;}
 
-		#forecast {height:25%}
+		#forecast {height:25vh;}
 
 		#nwsfc {font-size: 3em;}
 
-		#outTemp {font-size:4em;}
+		#outTemp {font-size:25vh;}
 
 		img.sunIcon {height:1em;}
 
 		img.fcTile{height:25vh;}
 
-		#inTemp {font-size: 2em; position:relative; bottom:0.5em; right: 1.7em;}
+		#inTemp {
+			font-size: 2em; 
+			position:relative; 
+			bottom:0.5em; 
+			right: 1.8em;}
 				
 		#myLocations{
-			display: flex;
+			/*display: flex;*/
+			display: none;
 			justify-content: flex-start;
 			overflow-x: scroll;
 			}
+
 		div.loc_card{
 			display: inline;
 			width: 33vw;
@@ -46,9 +64,8 @@
 			padding: .2em;
 			flex: 0 0 30vw;
 			}
-
 		
-		//#loc_name {height:fit-content; padding:.25em}
+		#loc_name {height:fit-content; padding:.25em; display:none;}
 		
 		#locIcon {height:2em; position: absolute; right:0px; top:0px; margin: 1em;}
 		
@@ -71,15 +88,18 @@
 		  width: 80vw; /* Could be more or less, depending on screen size */
 		}
 		
-		#placePanel{height:100vh;
+/*		#placePanel{
+			height: fit-content;
+			font-size: 1.5em;
 			border: solid 5px black; 
 			border-radius:1em;}
+*/
 
 		/*#almanac{display:none;}*/
 
-		#fcTileBox{overflow-x: scroll;}
+		/*#fcTileBox{overflow-x: scroll;}*/
 		
-		td.fcst {text-align:center}
+		td.fcst {text-align:center; font-size:1.5em;}
 		
 		center.logo {position: absolute; bottom: 0px; align:center;}
 	</style>				
@@ -92,31 +112,34 @@
 </div>
 <!--<img id="locIcon" src="ic_gps_fixed_24px.svg" onclick="getLocation()">-->
 
-<div id="placePanel">
-	<div id="loc_name"></div>
 
 	<div id="almanac">
 			<div id="inoutTemp">
-				<span id="outTemp">--</span>&deg;F
+				<span id="outTemp">32</span>&deg;F
 				<span width="1em"> </span>
 				<img src="./house.png" style="height:4em;">
-				<span id="inTemp">--</span>
+				<span id="inTemp">68</span>
 				<img src="radar.png" style="height:3em; width:3em;" onClick="showRadar()">
 			</div>
 			<!--<div id="radarContainer">-->
 			<!--</div>-->
 			<div id="nwsHiLo">
-			<font color="red">Hi</font> <span id="nwsHi"></span>&nbsp;<font color="blue">Lo</font> <span id="nwsLo"></span>
+				<font color="red">Hi</font> <span id="nwsHi"></span>&nbsp;<font color="blue">Lo</font> <span id="nwsLo"></span>
+				</div>
+				<div id="alert" onClick="showAlert()"><img src="alert.png"></div>
+				<div id="nwsFc" onClick="showForecast(0)"></div>
+				<div id="date"></div>
+				<!--<div id="moonPhase"></div>-->
+				<div>
+					<img src="sunrise.png" class="sunIcon"><span id="sunriseTime"></span>&nbsp;
+					<img src="sunset.png" class="sunIcon"><span id="sunsetTime"></span>
 			</div>
-			<div id="alert" onClick="showAlert()"><img src="alert.png"></div>
-			<div id="nwsFc" onClick="showForecast(0)"></div>
-			<div id="date"></div>
-			<div id="moonPhase"></div>
-			<div><img src="sunrise.png" class="sunIcon"><span id="sunriseTime"></span>&nbsp;<img src="sunset.png" class="sunIcon"><span id="sunsetTime"></span></div>
+			
 	</div>
-	<div id="forecast">
+	<div id="placePanel">
+	<div id="loc_name"></div>
 		
-
+	<div id="forecast">
 		<!--<div id="windContainer">
 			<canvas id="wind" width="300" height="300"></canvas>
 		<div>
@@ -131,16 +154,15 @@
 		</div>
 	</div>
 </div>
-<hr>
-<div>
+
+<!--<div>
 	<input id="searchBox" onFocus = "this.value=''"></input><button onClick="localize(document.getElementById('searchBox').value)">Search</button>
 	<button onclick="saveLocation()"><3</button>
 </div>
-<hr>
+<hr>-->
 <div id="myLocations"></div>
 	
 </body>
-
     <!-- Load HA WebSocket Bus Module -->
 <script src="haws.umd.js"></script>
     <script type="module">
@@ -175,8 +197,6 @@
 		document.getElementById("inTemp").innerText = isNaN(ni)
 		? "--"
 		: Math.round(ni);
-
-		document.getElementById("date").innerText = date.toDateString();
 	});
 	}
 
@@ -210,16 +230,22 @@
 	var currentPlace = null;
 	
 	function onloadRoutines(){
-		loadLastLocation();
 		getSavedLocations();
+		loadLastLocation();
+		
 	}
 	
 	function loadLastLocation(){
+			var date = new Date();
+			document.getElementById("date").innerText = date.toDateString();
 			currentPlace = JSON.parse(localStorage.getItem('currentPlace'));
 			if(currentPlace){
 				document.getElementById('loc_name').innerHTML = currentPlace.displayName;
 				renderWait();
 				getWx(currentPlace);
+			}else if(currentPlace == null){
+				getLocation();
+				saveLocation();S
 			}
 	}
 	
@@ -274,7 +300,11 @@
 		try{
 			Places = JSON.parse(localStorage.getItem('myLocations'));
 			}
-		catch{Places = null};
+		catch{
+			//No locations in storage, use current location
+			getLocation();
+			//Places = null
+		};
 		if (Places == null){localStorage.setItem('myLocations','[]')}
 		const myLocationsDiv = document.getElementById('myLocations');
 		var locs = '';
@@ -475,7 +505,7 @@
 		document.getElementById('nwsHi').innerHTML = '';
 		document.getElementById('nwsLo').innerHTML = '';
 		document.getElementById('nwsFc').innerHTML = '';
-		document.getElementById('searchBox').value = '';
+		//document.getElementById('searchBox').value = '';
 	}
 	
 	function getZone(currentPlace){	//get alert zone from 
@@ -565,6 +595,7 @@
 	function getLocation() {
 	  if (navigator.geolocation) {
 		// Geolocation is available
+		console.log("Fixing location")
 		navigator.geolocation.getCurrentPosition(showPosition, showError);
 	  } else {
 		// Geolocation is not supported by this browser
@@ -578,8 +609,6 @@
 	  // Use the latitude and longitude (e.g., display on a map or log to console)
 	  localize(latitude+ ', '+longitude);
 	  console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
-	  // Example: Display on a webpage element
-	 // document.getElementById("location-info").innerHTML = `Latitude: ${latitude}<br>Longitude: ${longitude}`;
 	}
 
 	function showError(error) {
@@ -598,6 +627,28 @@
 		  break;
 	  }
 	}
+
+	let millisPerHour = 60 * 60 * 1000;
+	let millisPastTheHour = Date.now() % millisPerHour;
+	let millisToTheHour = millisPerHour - millisPastTheHour;
+
+	function forecastRefresh(){
+		//Reload hourly
+		console.log('Refreshing...')
+		var date = new Date();
+		document.getElementById("date").innerText = date.toDateString();
+		loadLastLocation();
+	}
+
+
+	/*let runHourly = function() {
+	console.log("Running task at: " + new Date());
+	};*/
+	// Wait for the next exact hour, then run every hour
+	setTimeout(function() {
+	forecastRefresh();
+	setInterval(forecastRefresh, millisPerHour);
+	}, millisToTheHour);
 
 
 
